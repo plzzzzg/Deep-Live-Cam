@@ -51,15 +51,12 @@ def parse_args() -> None:
     program.add_argument('--execution-provider', help='execution provider', dest='execution_provider', default=['cpu'], choices=suggest_execution_providers(), nargs='+')
     program.add_argument('--execution-threads', help='number of execution threads', dest='execution_threads', type=int, default=suggest_execution_threads())
     program.add_argument('-v', '--version', action='version', version=f'{modules.metadata.name} {modules.metadata.version}')
-
-    # register deprecated args
-    program.add_argument('-f', '--face', help=argparse.SUPPRESS, dest='source_path_deprecated')
-    program.add_argument('--cpu-cores', help=argparse.SUPPRESS, dest='cpu_cores_deprecated', type=int)
-    program.add_argument('--gpu-vendor', help=argparse.SUPPRESS, dest='gpu_vendor_deprecated')
-    program.add_argument('--gpu-threads', help=argparse.SUPPRESS, dest='gpu_threads_deprecated', type=int)
+    program.add_argument('--gpu-device', help='specify which GPU device to use (e.g. 0,1,2)', dest='gpu_device', default='0')
+    program.add_argument('--web', help='start as web service', dest='web_mode', action='store_true', default=False)
+    program.add_argument('--port', help='specify web service port (default: 5000)', dest='web_port', type=int, default=5000)
 
     args = program.parse_args()
-
+    
     modules.globals.source_path = args.source_path
     modules.globals.target_path = args.target_path
     modules.globals.output_path = normalize_output_path(modules.globals.source_path, modules.globals.target_path, args.output_path)
@@ -141,6 +138,17 @@ def limit_resources() -> None:
     gpus = tensorflow.config.experimental.list_physical_devices('GPU')
     for gpu in gpus:
         tensorflow.config.experimental.set_memory_growth(gpu, True)
+    
+    # Set CUDA device
+    if 'CUDAExecutionProvider' in modules.globals.execution_providers:
+        gpu_devices = [int(device) for device in modules.globals.gpu_device.split(',')]
+        if torch.cuda.is_available():
+            # Set visible devices for PyTorch
+            torch.cuda.set_device(gpu_devices[0])  # 主设备设置为第一个指定的GPU
+            # Set visible devices for CUDA
+            os.environ["CUDA_VISIBLE_DEVICES"] = modules.globals.gpu_device
+            update_status(f'Using GPU device(s): {modules.globals.gpu_device}')
+    
     # limit memory usage
     if modules.globals.max_memory:
         memory = modules.globals.max_memory * 1024 ** 3
@@ -252,7 +260,12 @@ def run() -> None:
         if not frame_processor.pre_check():
             return
     limit_resources()
-    if modules.globals.headless:
+    
+    if modules.globals.web_mode:
+        from app import app, socketio
+        update_status(f'Starting web service on port {modules.globals.web_port}...')
+        socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=False)
+    elif modules.globals.headless:
         start()
     else:
         window = ui.init(start, destroy, modules.globals.lang)
