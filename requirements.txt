@@ -19,3 +19,6 @@ onnxruntime-gpu==1.17; sys_platform != 'darwin'
 tensorflow; sys_platform != 'darwin'
 opennsfw2==0.10.2
 protobuf==4.23.2
+flask==3.0.0
+flask-socketio==5.3.6
+opencv-python==4.8.1.78

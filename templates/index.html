@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>实时人脸替换</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        .video-panel {
+            width: 45%;
+        }
+        video, canvas {
+            width: 100%;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-panel">
+            <h3>原始视频</h3>
+            <video id="sourceVideo" autoplay playsinline></video>
+        </div>
+        <div class="video-panel">
+            <h3>处理后视频</h3>
+            <canvas id="outputCanvas"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const video = document.getElementById('sourceVideo');
+        const canvas = document.getElementById('outputCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 获取摄像头权限
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                
+                // 设置画布大小
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                });
+                
+                // 开始发送视频帧
+                setInterval(sendFrame, 100);
+            } catch (err) {
+                console.error('无法访问摄像头:', err);
+            }
+        }
+
+        // 发送视频帧到服务器
+        function sendFrame() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            const dataURL = tempCanvas.toDataURL('image/jpeg');
+            socket.emit('video_feed', dataURL);
+        }
+
+        // 接收处理后的帧
+        socket.on('processed_frame', (data) => {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = data;
+        });
+
+        // 启动
+        initCamera();
+    </script>
+</body>
+</html>
