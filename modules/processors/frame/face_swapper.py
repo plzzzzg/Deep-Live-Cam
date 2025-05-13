@@ -71,7 +71,7 @@ def get_face_swapper() -> Any:
 
             # Load the chosen model
             try:
-                FACE_SWAPPER = insightface.model_zoo.get_model(chosen_model_path, providers=modules.globals.execution_providers)
+                FACE_SWAPPER = insightface.model_zoo.get_model(chosen_model_path, providers=modules.globals.execution_providers, provider_options=modules.globals.provider_options)
             except Exception as e:
                 update_status(f"Error loading Face Swapper model {os.path.basename(chosen_model_path)}: {e}", NAME)
                 # Optionally, re-raise the exception or handle it more gracefully
