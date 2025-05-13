@@ -271,7 +271,7 @@ def run() -> None:
     limit_resources()
     
     if modules.globals.web_mode:
-        from app import app, socketio
+        from modules.app import app, socketio
         update_status(f'Starting web service on port {modules.globals.web_port}...')
         socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=False)
     elif modules.globals.headless:
