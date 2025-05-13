@@ -152,11 +152,35 @@ def limit_resources() -> None:
     if 'CUDAExecutionProvider' in modules.globals.execution_providers:
         gpu_devices = [int(device) for device in modules.globals.gpu_device.split(',')]
         if torch.cuda.is_available():
-            # Set visible devices for PyTorch
+            # 设置 PyTorch 的 GPU 设备
             torch.cuda.set_device(gpu_devices[0])  # 主设备设置为第一个指定的GPU
-            # Set visible devices for CUDA
+            
+            # 设置 CUDA 环境变量
             os.environ["CUDA_VISIBLE_DEVICES"] = modules.globals.gpu_device
-            # update_status(f'Using GPU device(s): {modules.globals.gpu_device}')
+            
+            # 设置 TensorFlow 的 GPU 设备
+            tf_devices = []
+            for device in gpu_devices:
+                tf_devices.append(f'/device:GPU:{device}')
+            tensorflow.config.set_visible_devices([gpus[i] for i in gpu_devices], 'GPU')
+            
+            # 设置 ONNX Runtime 的 GPU 设备
+            provider_options = [
+                {
+                    'device_id': device,
+                    'arena_extend_strategy': 'kNextPowerOfTwo',
+                    'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
+                    'cudnn_conv_algo_search': 'EXHAUSTIVE',
+                    'do_copy_in_default_stream': True,
+                } for device in gpu_devices
+            ]
+            onnxruntime.set_default_logger_severity(3)
+            onnxruntime.InferenceSession(
+                path=None,
+                providers=[('CUDAExecutionProvider', provider_options[0])]
+            )
+            
+            update_status(f'使用 GPU 设备: {modules.globals.gpu_device}')
     
     # limit memory usage
     if modules.globals.max_memory:
