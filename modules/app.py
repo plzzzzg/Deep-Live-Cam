@@ -4,7 +4,7 @@ from flask_cors import CORS
 import cv2
 import numpy as np
 import base64
-from modules.processors.frame.core import get_frame_processors_modules
+from modules.processors.frame.core import get_frame_processors_modules,get_one_face
 import modules.globals
 
 app = Flask(__name__)
