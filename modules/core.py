@@ -54,7 +54,13 @@ def parse_args() -> None:
     program.add_argument('--gpu-device', help='specify which GPU device to use (e.g. 0,1,2)', dest='gpu_device', default='0')
     program.add_argument('--web', help='start as web service', dest='web_mode', action='store_true', default=False)
     program.add_argument('--port', help='specify web service port (default: 5000)', dest='web_port', type=int, default=5000)
-
+    
+    # register deprecated args
+    program.add_argument('-f', '--face', help=argparse.SUPPRESS, dest='source_path_deprecated', default=None)
+    program.add_argument('--cpu-cores', help=argparse.SUPPRESS, dest='cpu_cores_deprecated', type=int, default=None)
+    program.add_argument('--gpu-vendor', help=argparse.SUPPRESS, dest='gpu_vendor_deprecated', default=None)
+    program.add_argument('--gpu-threads', help=argparse.SUPPRESS, dest='gpu_threads_deprecated', type=int, default=None)
+    
     args = program.parse_args()
     
     modules.globals.source_path = args.source_path
