@@ -4,8 +4,9 @@ from flask_cors import CORS
 import cv2
 import numpy as np
 import base64
-from modules.processors.frame.core import get_frame_processors_modules,get_one_face
+from modules.processors.frame.core import get_frame_processors_modules
 import modules.globals
+from modules.face_analyser import get_one_face
 
 app = Flask(__name__)
 # 启用 CORS
@@ -21,8 +22,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # 初始化全局设置
 # modules.globals.frame_processors = ['face_swapper']
-modules.globals.many_faces = False
-modules.globals.nsfw_filter = False
+# modules.globals.many_faces = False
+# modules.globals.nsfw_filter = False
 
 @app.route('/')
 def index():
@@ -40,8 +41,7 @@ def process_image():
         encoded_data = image_data.split(',')[1]
         nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        source_face = get_one_face(source_img)
+        source_face = get_one_face(frame)
 
         # 处理图像
         frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
