@@ -152,35 +152,33 @@ def limit_resources() -> None:
     if 'CUDAExecutionProvider' in modules.globals.execution_providers:
         gpu_devices = [int(device) for device in modules.globals.gpu_device.split(',')]
         if torch.cuda.is_available():
-            # 设置 PyTorch 的 GPU 设备
-            torch.cuda.set_device(gpu_devices[0])  # 主设备设置为第一个指定的GPU
+            # Set PyTorch GPU device
+            torch.cuda.set_device(gpu_devices[0])  # Set first specified GPU as primary
             
-            # 设置 CUDA 环境变量
+            # Set CUDA environment variable
             os.environ["CUDA_VISIBLE_DEVICES"] = modules.globals.gpu_device
             
-            # 设置 TensorFlow 的 GPU 设备
+            # Set TensorFlow GPU devices
             tf_devices = []
             for device in gpu_devices:
                 tf_devices.append(f'/device:GPU:{device}')
             tensorflow.config.set_visible_devices([gpus[i] for i in gpu_devices], 'GPU')
             
-            # 设置 ONNX Runtime 的 GPU 设备
-            provider_options = [
-                {
-                    'device_id': device,
-                    'arena_extend_strategy': 'kNextPowerOfTwo',
-                    'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
-                    'cudnn_conv_algo_search': 'EXHAUSTIVE',
-                    'do_copy_in_default_stream': True,
-                } for device in gpu_devices
-            ]
-            onnxruntime.set_default_logger_severity(3)
-            onnxruntime.InferenceSession(
-                path=None,
-                providers=[('CUDAExecutionProvider', provider_options[0])]
-            )
+            # Configure ONNX Runtime GPU settings
+            provider_options = {
+                'device_id': gpu_devices[0],
+                'arena_extend_strategy': 'kNextPowerOfTwo',
+                'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
+                'cudnn_conv_algo_search': 'EXHAUSTIVE',
+                'do_copy_in_default_stream': True,
+            }
             
-            update_status(f'使用 GPU 设备: {modules.globals.gpu_device}')
+            # Set ONNX Runtime provider options globally
+            onnxruntime.set_default_logger_severity(3)
+            modules.globals.execution_providers = ['CUDAExecutionProvider']
+            modules.globals.provider_options = provider_options
+            
+            update_status(f'Using GPU device: {modules.globals.gpu_device}')
     
     # limit memory usage
     if modules.globals.max_memory:
