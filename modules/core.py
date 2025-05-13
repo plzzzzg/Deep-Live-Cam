@@ -176,7 +176,7 @@ def limit_resources() -> None:
             # Set ONNX Runtime provider options globally
             onnxruntime.set_default_logger_severity(3)
             modules.globals.execution_providers = ['CUDAExecutionProvider']
-            modules.globals.provider_options = provider_options
+            modules.globals.provider_options = [provider_options]
             
             update_status(f'Using GPU device: {modules.globals.gpu_device}')
     
