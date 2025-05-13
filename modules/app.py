@@ -30,7 +30,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/page/image')
-def index():
+def page_image():
     return render_template('process_image.html')
 
 @app.route('/process_image', methods=['POST'])
