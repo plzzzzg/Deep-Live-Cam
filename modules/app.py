@@ -29,6 +29,10 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 def index():
     return render_template('index.html')
 
+@app.route('/page/image')
+def index():
+    return render_template('process_image.html')
+
 @app.route('/process_image', methods=['POST'])
 def process_image():
     try:
@@ -64,6 +68,10 @@ def process_image():
             'error': str(e)
         }), 500
 
+
+source_img = cv2.imread(modules.globals.source_path)
+source_face = get_one_face(source_img)
+
 @socketio.on('video_feed')
 def video_feed(data):
     # 解码前端发送的base64图像
@@ -74,7 +82,7 @@ def video_feed(data):
     # 处理图像
     frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
     for processor in frame_processors:
-        frame = processor.process_frame(modules.globals.source_path, frame)
+        frame = processor.process_frame(source_face, frame)
     
     # 编码处理后的图像
     _, buffer = cv2.imencode('.jpg', frame)
