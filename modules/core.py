@@ -156,7 +156,7 @@ def limit_resources() -> None:
             torch.cuda.set_device(gpu_devices[0])  # 主设备设置为第一个指定的GPU
             # Set visible devices for CUDA
             os.environ["CUDA_VISIBLE_DEVICES"] = modules.globals.gpu_device
-            update_status(f'Using GPU device(s): {modules.globals.gpu_device}')
+            # update_status(f'Using GPU device(s): {modules.globals.gpu_device}')
     
     # limit memory usage
     if modules.globals.max_memory:
