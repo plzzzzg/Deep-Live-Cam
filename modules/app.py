@@ -41,7 +41,7 @@ def process_image():
         encoded_data = image_data.split(',')[1]
         nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        source_face = get_one_face(model.globals.source_path)
+        source_face = get_one_face(modules.globals.source_path)
 
         # 处理图像
         frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
