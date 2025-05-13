@@ -83,6 +83,9 @@ def parse_args() -> None:
     modules.globals.execution_providers = decode_execution_providers(args.execution_provider)
     modules.globals.execution_threads = args.execution_threads
     modules.globals.lang = args.lang
+    modules.globals.gpu_device = args.gpu_device
+    modules.globals.web_mode = args.web_mode
+    modules.globals.web_port = args.web_port
 
     #for ENHANCER tumbler:
     if 'face_enhancer' in args.frame_processor:
