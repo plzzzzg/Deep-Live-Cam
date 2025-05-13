@@ -20,7 +20,7 @@ CORS(app, resources={
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # 初始化全局设置
-modules.globals.frame_processors = ['face_swapper']
+# modules.globals.frame_processors = ['face_swapper']
 modules.globals.many_faces = False
 modules.globals.nsfw_filter = False
 
