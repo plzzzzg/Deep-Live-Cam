@@ -41,10 +41,12 @@ def process_image():
         nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
+        source_face = get_one_face(source_img)
+
         # 处理图像
         frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
         for processor in frame_processors:
-            frame = processor.process_frame(modules.globals.source_path, frame)
+            frame = processor.process_frame(source_face, frame)
         
         # 编码处理后的图像
         _, buffer = cv2.imencode('.jpg', frame)
