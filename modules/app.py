@@ -44,7 +44,7 @@ def process_image():
         # 处理图像
         frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
         for processor in frame_processors:
-            frame = processor.process_frame(None, frame)
+            frame = processor.process_frame(modules.globals.source_path, frame)
         
         # 编码处理后的图像
         _, buffer = cv2.imencode('.jpg', frame)
@@ -71,7 +71,7 @@ def video_feed(data):
     # 处理图像
     frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
     for processor in frame_processors:
-        frame = processor.process_frame(None, frame)
+        frame = processor.process_frame(modules.globals.source_path, frame)
     
     # 编码处理后的图像
     _, buffer = cv2.imencode('.jpg', frame)
