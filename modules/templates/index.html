@@ -15,9 +15,32 @@
             width: 100%;
             border: 1px solid #ccc;
         }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .controls button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .controls input {
+            width: 100px;
+            padding: 5px;
+            margin: 0 10px;
+        }
     </style>
 </head>
 <body>
+    <div class="controls">
+        <button id="startBtn">启动</button>
+        <button id="stopBtn" disabled>停止</button>
+        <label>
+            帧率间隔(毫秒):
+            <input type="number" id="frameInterval" value="100" min="16" max="1000" step="1">
+        </label>
+    </div>
     <div class="container">
         <div class="video-panel">
             <h3>原始视频</h3>
@@ -35,6 +58,74 @@
         const video = document.getElementById('sourceVideo');
         const canvas = document.getElementById('outputCanvas');
         const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const frameIntervalInput = document.getElementById('frameInterval');
+        
+        let isRunning = false;
+        let frameInterval = 100;
+        let frameTimer = null;
+        
+        // 启动/停止控制
+        startBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                initCamera();
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                isRunning = true;
+            }
+        });
+        
+        stopBtn.addEventListener('click', () => {
+            if (isRunning) {
+                stopCamera();
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                isRunning = false;
+            }
+        });
+        
+        // 帧率间隔控制
+        frameIntervalInput.addEventListener('change', () => {
+            const value = parseInt(frameIntervalInput.value);
+            if (value >= 16 && value <= 1000) {
+                frameInterval = value;
+                if (isRunning) {
+                    stopFrameCapture();
+                    startFrameCapture();
+                }
+            } else {
+                alert('请输入16-1000之间的数值');
+                frameIntervalInput.value = frameInterval;
+            }
+        });
+        
+        // 停止摄像头
+        function stopCamera() {
+            if (video.srcObject) {
+                const tracks = video.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            stopFrameCapture();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // 开始帧捕获
+        function startFrameCapture() {
+            if (frameTimer) {
+                clearInterval(frameTimer);
+            }
+            frameTimer = setInterval(sendFrame, frameInterval);
+        }
+        
+        // 停止帧捕获
+        function stopFrameCapture() {
+            if (frameTimer) {
+                clearInterval(frameTimer);
+                frameTimer = null;
+            }
+        }
         
         // 获取摄像头权限
         async function initCamera() {
@@ -76,7 +167,7 @@
                 });
                 
                 // 开始发送视频帧
-                setInterval(sendFrame, 100);
+                startFrameCapture();
             } catch (err) {
                 console.error('无法访问摄像头:', err);
                 alert('无法访问摄像头，请确保：\n1. 已授予浏览器摄像头访问权限\n2. 摄像头未被其他应用程序占用\n3. 使用 HTTPS 或 localhost 访问此页面');
