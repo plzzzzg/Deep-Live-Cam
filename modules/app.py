@@ -1,5 +1,6 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO
+from flask_cors import CORS
 import cv2
 import numpy as np
 import base64
@@ -7,7 +8,16 @@ from modules.processors.frame.core import get_frame_processors_modules
 import modules.globals
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+# 启用 CORS
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "allow_headers": "*",
+        "expose_headers": "*",
+        "methods": ["GET", "POST", "OPTIONS"]
+    }
+})
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # 初始化全局设置
 modules.globals.frame_processors = ['face_swapper']

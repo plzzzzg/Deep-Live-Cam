@@ -31,7 +31,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        const socket = io();
+        const socket = io('ws://184.105.4.163:16000');
         const video = document.getElementById('sourceVideo');
         const canvas = document.getElementById('outputCanvas');
         const ctx = canvas.getContext('2d');
