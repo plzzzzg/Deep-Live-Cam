@@ -38,8 +38,35 @@
         
         // 获取摄像头权限
         async function initCamera() {
+            // 检查浏览器是否支持 getUserMedia
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                // 兼容性处理
+                const getUserMedia = navigator.getUserMedia ||
+                    navigator.webkitGetUserMedia ||
+                    navigator.mozGetUserMedia ||
+                    navigator.msGetUserMedia;
+                
+                if (!getUserMedia) {
+                    console.error('浏览器不支持 getUserMedia API');
+                    alert('您的浏览器不支持摄像头访问，请使用最新版本的 Chrome、Firefox 或 Edge 浏览器。');
+                    return;
+                }
+
+                navigator.mediaDevices = {};
+                navigator.mediaDevices.getUserMedia = function(constraints) {
+                    return new Promise((resolve, reject) => {
+                        getUserMedia.call(navigator, constraints, resolve, reject);
+                    });
+                }
+            }
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
                 video.srcObject = stream;
                 
                 // 设置画布大小
@@ -52,6 +79,7 @@
                 setInterval(sendFrame, 100);
             } catch (err) {
                 console.error('无法访问摄像头:', err);
+                alert('无法访问摄像头，请确保：\n1. 已授予浏览器摄像头访问权限\n2. 摄像头未被其他应用程序占用\n3. 使用 HTTPS 或 localhost 访问此页面');
             }
         }
 

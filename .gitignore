@@ -10,6 +10,7 @@ tf_env/
 *.png
 *.mp4
 *.mkv
+*.DS_Store
 
 .tmp/
 temp/
