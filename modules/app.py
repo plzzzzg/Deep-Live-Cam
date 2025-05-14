@@ -70,12 +70,21 @@ def process_image():
         }), 500
 
 
-source_img = cv2.imread(modules.globals.source_path)
-source_face = get_one_face(source_img)
+# 移除全局变量
+# source_img = cv2.imread(modules.globals.source_path)
+# source_face = get_one_face(source_img)
 
 @socketio.on('video_feed')
 def video_feed(data):
     start_time = time.time()  # 开始计时
+    
+    # 获取源图片和人脸（如果还没有加载）
+    if not hasattr(modules.globals, 'source_face') or modules.globals.source_face is None:
+        if not modules.globals.source_path:
+            socketio.emit('error', '请先设置源图片路径')
+            return
+        source_img = cv2.imread(modules.globals.source_path)
+        modules.globals.source_face = get_one_face(source_img)
     
     # 解码前端发送的base64图像
     decode_start = time.time()
@@ -88,7 +97,7 @@ def video_feed(data):
     process_start = time.time()
     frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
     for processor in frame_processors:
-        frame = processor.process_frame(source_face, frame)
+        frame = processor.process_frame(modules.globals.source_face, frame)
     process_time = time.time() - process_start
     
     # 编码处理后的图像
