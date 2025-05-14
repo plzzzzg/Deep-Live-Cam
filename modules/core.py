@@ -1,3 +1,4 @@
+from ast import Tuple
 import os
 import sys
 # single thread doubles cuda performance - needs to be set before torch import
@@ -296,7 +297,7 @@ def run() -> None:
     if modules.globals.web_mode:
         from modules.app import app, socketio
         update_status(f'Starting web service on port {modules.globals.web_port}...')
-        socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=False)
+        socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=True)
     elif modules.globals.headless:
         start()
     else:
