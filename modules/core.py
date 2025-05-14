@@ -81,6 +81,7 @@ def parse_args() -> None:
     modules.globals.live_resizable = args.live_resizable
     modules.globals.max_memory = args.max_memory
     modules.globals.execution_providers = decode_execution_providers(args.execution_provider)
+    
     modules.globals.execution_threads = args.execution_threads
     modules.globals.lang = args.lang
     modules.globals.gpu_device = args.gpu_device
@@ -293,9 +294,6 @@ def run() -> None:
     limit_resources()
     
     if modules.globals.web_mode:
-        for frame_processor in get_frame_processors_modules(modules.globals.frame_processors):
-            if not frame_processor.pre_start():
-                return
         from modules.app import app, socketio
         update_status(f'Starting web service on port {modules.globals.web_port}...')
         socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=False)
