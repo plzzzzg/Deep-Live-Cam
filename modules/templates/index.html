@@ -38,7 +38,7 @@
         <button id="stopBtn" disabled>停止</button>
         <label>
             帧率间隔(毫秒):
-            <input type="number" id="frameInterval" value="200" min="16" max="1000" step="1">
+            <input type="number" id="frameInterval" value="400" min="16" max="1000" step="1">
         </label>
     </div>
     <div class="container">
@@ -177,10 +177,19 @@
         // 发送视频帧到服务器
         function sendFrame() {
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = video.videoWidth;
-            tempCanvas.height = video.videoHeight;
-            tempCanvas.getContext('2d').drawImage(video, 0, 0);
-            const dataURL = tempCanvas.toDataURL('image/jpeg');
+            // 设置临时画布为720p分辨率
+            const targetHeight = 720;
+            const targetWidth = Math.floor(video.videoWidth * (targetHeight / video.videoHeight));
+            
+            tempCanvas.width = targetWidth;
+            tempCanvas.height = targetHeight;
+            
+            // 绘制并缩放图像
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+            
+            // 转换为JPEG格式并发送
+            const dataURL = tempCanvas.toDataURL('image/jpeg', 0.9);
             socket.emit('video_feed', dataURL);
         }
 

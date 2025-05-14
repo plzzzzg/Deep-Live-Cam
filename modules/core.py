@@ -293,6 +293,9 @@ def run() -> None:
     limit_resources()
     
     if modules.globals.web_mode:
+        for frame_processor in get_frame_processors_modules(modules.globals.frame_processors):
+            if not frame_processor.pre_start():
+                return
         from modules.app import app, socketio
         update_status(f'Starting web service on port {modules.globals.web_port}...')
         socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=False)
