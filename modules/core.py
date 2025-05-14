@@ -297,7 +297,7 @@ def run() -> None:
     if modules.globals.web_mode:
         from modules.app import app, socketio
         update_status(f'Starting web service on port {modules.globals.web_port}...')
-        socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=True)
+        socketio.run(app, host='0.0.0.0', port=modules.globals.web_port, debug=True, use_reloader=False)
     elif modules.globals.headless:
         start()
     else:
