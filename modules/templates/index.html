@@ -177,8 +177,8 @@
         // 发送视频帧到服务器
         function sendFrame() {
             const tempCanvas = document.createElement('canvas');
-            // 设置临时画布为720p分辨率
-            const targetHeight = 720;
+            // 设置临时画布为480p分辨率
+            const targetHeight = 480;
             const targetWidth = Math.floor(video.videoWidth * (targetHeight / video.videoHeight));
             
             tempCanvas.width = targetWidth;
@@ -186,10 +186,13 @@
             
             // 绘制并缩放图像
             const ctx = tempCanvas.getContext('2d');
+            // 使用双线性插值算法进行缩放，提高图像质量
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
             
-            // 转换为JPEG格式并发送
-            const dataURL = tempCanvas.toDataURL('image/jpeg', 0.9);
+            // 转换为JPEG格式并发送，适当降低质量以减小数据量
+            const dataURL = tempCanvas.toDataURL('image/jpeg', 0.85);
             socket.emit('video_feed', dataURL);
         }
 
