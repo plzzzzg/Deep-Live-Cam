@@ -114,3 +114,82 @@ def video_feed(data):
     
     # 发送处理后的图像回客户端
     socketio.emit('processed_frame', f'data:image/jpeg;base64,{processed_image}')
+
+
+# 添加 socket 连接的字典，用于存储每个连接的 source_face
+socket_faces = {}
+
+@socketio.on('connect')
+def handle_connect():
+    print(f'Client connected: {request.sid}')
+    socket_faces[request.sid] = None
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f'Client disconnected: {request.sid}')
+    if request.sid in socket_faces:
+        del socket_faces[request.sid]
+
+@socketio.on('source_image')
+def handle_source_image(data):
+    try:
+        # 解码base64图像
+        encoded_data = data.split(',')[1]
+        nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
+        source_img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        # 获取人脸
+        source_face = get_one_face(source_img)
+        if source_face is None:
+            raise Exception('未检测到人脸')
+        
+        # 存储该连接的 source_face
+        socket_faces[request.sid] = source_face
+        socketio.emit('source_image_status', {'success': True})
+        
+    except Exception as e:
+        socketio.emit('source_image_status', {
+            'success': False,
+            'error': str(e)
+        })
+
+@socketio.on('video_feed')
+def video_feed(data):
+    # 检查是否有 source_face
+    if request.sid not in socket_faces or socket_faces[request.sid] is None:
+        socketio.emit('error', '请先上传源图片')
+        return
+    
+    start_time = time.time()
+    
+    # 使用当前连接的 source_face
+    source_face = socket_faces[request.sid]
+    
+    # 解码前端发送的base64图像
+    decode_start = time.time()
+    encoded_data = data.split(',')[1]
+    nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
+    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    decode_time = time.time() - decode_start
+    
+    # 处理图像
+    process_start = time.time()
+    frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
+    for processor in frame_processors:
+        frame = processor.process_frame(source_face, frame)
+    process_time = time.time() - process_start
+    
+    # 编码处理后的图像
+    encode_start = time.time()
+    _, buffer = cv2.imencode('.jpg', frame)
+    processed_image = base64.b64encode(buffer).decode('utf-8')
+    encode_time = time.time() - encode_start
+    
+    # 计算总时间
+    total_time = time.time() - start_time
+    
+    # 打印时间日志
+    print(f'[性能统计] 总耗时: {total_time:.3f}s (解码: {decode_time:.3f}s, 处理: {process_time:.3f}s, 编码: {encode_time:.3f}s)')
+    
+    # 发送处理后的图像回客户端
+    socketio.emit('processed_frame', f'data:image/jpeg;base64,{processed_image}')

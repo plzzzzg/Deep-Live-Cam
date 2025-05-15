@@ -63,6 +63,13 @@
             </label>
             <button id="connectBtn">连接</button>
         </div>
+        <div class="source-image-control">
+            <label>
+                源图片:
+                <input type="file" id="sourceImage" accept="image/*" disabled>
+            </label>
+            <span id="uploadStatus"></span>
+        </div>
         <button id="startBtn" disabled>启动</button>
         <button id="stopBtn" disabled>停止</button>
         <label>
@@ -96,6 +103,8 @@
         const frameIntervalInput = document.getElementById('frameInterval');
         const serverAddressInput = document.getElementById('serverAddress');
         const connectBtn = document.getElementById('connectBtn');
+        const sourceImageInput = document.getElementById('sourceImage');
+        const uploadStatus = document.getElementById('uploadStatus');
         const latencyDisplay = document.getElementById('latency');
         const fpsDisplay = document.getElementById('fps');
         
@@ -117,16 +126,29 @@
             
             socket.on('connect', () => {
                 console.log('已连接到服务器');
-                startBtn.disabled = false;
+                sourceImageInput.disabled = false; // 启用图片选择
                 connectBtn.textContent = '重新连接';
+                uploadStatus.textContent = '请选择源图片';
             });
             
             socket.on('disconnect', () => {
                 console.log('与服务器断开连接');
+                sourceImageInput.disabled = true;
                 startBtn.disabled = true;
                 stopBtn.disabled = true;
+                uploadStatus.textContent = '';
                 if (isRunning) {
                     stopCamera();
+                }
+            });
+            
+            socket.on('source_image_status', (data) => {
+                if (data.success) {
+                    uploadStatus.textContent = '源图片上传成功';
+                    startBtn.disabled = false; // 启用启动按钮
+                } else {
+                    uploadStatus.textContent = '源图片上传失败: ' + data.error;
+                    startBtn.disabled = true;
                 }
             });
             
@@ -302,6 +324,30 @@
             const dataURL = tempCanvas.toDataURL('image/jpeg', 0.85);
             socket.emit('video_feed', dataURL);
         }
+        
+        // 处理源图片上传
+        sourceImageInput.addEventListener('change', async (e) => {
+            if (!socket || !socket.connected) {
+                alert('请先连接服务器');
+                return;
+            }
+            
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            try {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadStatus.textContent = '正在上传...';
+                    startBtn.disabled = true;
+                    socket.emit('source_image', e.target.result);
+                };
+                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error('读取图片失败:', err);
+                uploadStatus.textContent = '读取图片失败';
+            }
+        });
     </script>
 </body>
 </html>
