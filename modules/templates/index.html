@@ -30,16 +30,49 @@
             padding: 5px;
             margin: 0 10px;
         }
+        .server-control {
+            margin-bottom: 15px;
+        }
+        .server-control input {
+            width: 200px;
+        }
+        .stats {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+        }
+        .stats-item {
+            margin: 0 15px;
+            font-size: 14px;
+        }
+        .stats-value {
+            font-weight: bold;
+            color: #4CAF50;
+        }
     </style>
 </head>
 <body>
     <div class="controls">
-        <button id="startBtn">启动</button>
+        <div class="server-control">
+            <label>
+                服务器地址:
+                <input type="text" id="serverAddress" value="192.168.59.20:16000">
+            </label>
+            <button id="connectBtn">连接</button>
+        </div>
+        <button id="startBtn" disabled>启动</button>
         <button id="stopBtn" disabled>停止</button>
         <label>
             帧率间隔(毫秒):
-            <input type="number" id="frameInterval" value="400" min="16" max="1000" step="1">
+            <input type="number" id="frameInterval" value="150" min="16" max="1000" step="1">
         </label>
+        <div class="stats">
+            <div class="stats-item">延迟: <span id="latency" class="stats-value">0</span> ms</div>
+            <div class="stats-item">帧率: <span id="fps" class="stats-value">0</span> fps</div>
+        </div>
     </div>
     <div class="container">
         <div class="video-panel">
@@ -54,17 +87,76 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        const socket = io('ws://184.105.4.163:16000');
+        let socket = null;
         const video = document.getElementById('sourceVideo');
         const canvas = document.getElementById('outputCanvas');
         const ctx = canvas.getContext('2d');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const frameIntervalInput = document.getElementById('frameInterval');
+        const serverAddressInput = document.getElementById('serverAddress');
+        const connectBtn = document.getElementById('connectBtn');
+        const latencyDisplay = document.getElementById('latency');
+        const fpsDisplay = document.getElementById('fps');
         
         let isRunning = false;
-        let frameInterval = 100;
+        let frameInterval = 400; // 使用输入框的默认值
         let frameTimer = null;
+        let lastFrameSentTime = 0;
+        let frameCount = 0;
+        let lastFpsUpdateTime = 0;
+        
+        // 连接服务器
+        connectBtn.addEventListener('click', () => {
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            const address = serverAddressInput.value;
+            socket = io(`ws://${address}`);
+            
+            socket.on('connect', () => {
+                console.log('已连接到服务器');
+                startBtn.disabled = false;
+                connectBtn.textContent = '重新连接';
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('与服务器断开连接');
+                startBtn.disabled = true;
+                stopBtn.disabled = true;
+                if (isRunning) {
+                    stopCamera();
+                }
+            });
+            
+            socket.on('error', (error) => {
+                console.error('服务器错误:', error);
+                alert('服务器错误: ' + error);
+            });
+            
+            // 接收处理后的帧
+            socket.on('processed_frame', (data) => {
+                // 计算延迟（从发送到接收的时间）
+                const now = performance.now();
+                const latency = now - lastFrameSentTime;
+                latencyDisplay.textContent = Math.round(latency);
+                
+                // 计算帧率
+                frameCount++;
+                if (now - lastFpsUpdateTime >= 1000) { // 每秒更新一次帧率
+                    fpsDisplay.textContent = frameCount;
+                    frameCount = 0;
+                    lastFpsUpdateTime = now;
+                }
+                
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = data;
+            });
+        });
         
         // 启动/停止控制
         startBtn.addEventListener('click', () => {
@@ -73,6 +165,10 @@
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
                 isRunning = true;
+                
+                // 重置统计信息
+                frameCount = 0;
+                lastFpsUpdateTime = performance.now();
             }
         });
         
@@ -82,6 +178,10 @@
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
                 isRunning = false;
+                
+                // 清空统计信息
+                latencyDisplay.textContent = '0';
+                fpsDisplay.textContent = '0';
             }
         });
         
@@ -176,6 +276,13 @@
 
         // 发送视频帧到服务器
         function sendFrame() {
+            if (!socket || !socket.connected || !video.srcObject) {
+                console.warn('未连接到服务器或视频未就绪，无法发送视频帧');
+                return;
+            }
+            
+            lastFrameSentTime = performance.now(); // 记录发送时间
+            
             const tempCanvas = document.createElement('canvas');
             // 设置临时画布为480p分辨率
             const targetHeight = 480;
@@ -195,18 +302,6 @@
             const dataURL = tempCanvas.toDataURL('image/jpeg', 0.85);
             socket.emit('video_feed', dataURL);
         }
-
-        // 接收处理后的帧
-        socket.on('processed_frame', (data) => {
-            const img = new Image();
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0);
-            };
-            img.src = data;
-        });
-
-        // 启动
-        initCamera();
     </script>
 </body>
 </html>
