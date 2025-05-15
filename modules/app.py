@@ -161,24 +161,40 @@ def video_feed(data):
         return
     
     start_time = time.time()
-    
-    # 使用当前连接的 source_face
     source_face = socket_faces[request.sid]
     
-    # 解码前端发送的base64图像
-    decode_start = time.time()
-    encoded_data = data.split(',')[1]
-    nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
-    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    decode_time = time.time() - decode_start
-    
-    # 处理图像
-    process_start = time.time()
-    frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
-    for processor in frame_processors:
-        frame = processor.process_frame(source_face, frame)
-    process_time = time.time() - process_start
-    
+    try:
+        # 解码前端发送的base64图像
+        decode_start = time.time()
+        # 检查数据类型
+        # 如果是字符串，直接使用；如果是字典，提取 frame 字段
+        if isinstance(data, dict):
+            frame_data = data['frame'] if isinstance(data, dict) else data
+            enhance = data.get('enhance', False) if isinstance(data, dict) else False
+        else:
+            frame_data = data
+            enhance = False
+        
+        encoded_data = frame_data.split(',')[1]
+        nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        decode_time = time.time() - decode_start
+        
+        # 处理图像
+        process_start = time.time()
+        # 根据是否启用人脸增强来设置处理器
+        processors = ['face_swapper']
+        if enhance:
+            processors.append('face_enhancer')
+            
+        frame_processors = get_frame_processors_modules(processors)
+        for processor in frame_processors:
+            frame = processor.process_frame(source_face, frame)
+        process_time = time.time() - process_start
+    except Exception as e:
+        socketio.emit('error', str(e))
+        return
+
     # 编码处理后的图像
     encode_start = time.time()
     _, buffer = cv2.imencode('.jpg', frame)

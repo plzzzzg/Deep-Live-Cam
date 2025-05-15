@@ -26,7 +26,7 @@
             cursor: pointer;
         }
         .controls input {
-            width: 100px;
+            /* width: 100px; */
             padding: 5px;
             margin: 0 10px;
         }
@@ -65,15 +65,20 @@
         </div>
         <div class="source-image-control">
             <label>
-                源图片:
+                人脸图片:
                 <input type="file" id="sourceImage" accept="image/*" disabled>
             </label>
             <span id="uploadStatus"></span>
         </div>
+        <div class="enhance-control">
+            <label>
+                <input type="checkbox" id="enableEnhance"> 启用人脸增强
+            </label>
+        </div>
         <button id="startBtn" disabled>启动</button>
         <button id="stopBtn" disabled>停止</button>
         <label>
-            帧率间隔(毫秒):
+            摄像头截帧间隔(毫秒):
             <input type="number" id="frameInterval" value="150" min="16" max="1000" step="1">
         </label>
         <div class="stats">
@@ -107,6 +112,7 @@
         const uploadStatus = document.getElementById('uploadStatus');
         const latencyDisplay = document.getElementById('latency');
         const fpsDisplay = document.getElementById('fps');
+        const enableEnhanceCheckbox = document.getElementById('enableEnhance');
         
         let isRunning = false;
         let frameInterval = 400; // 使用输入框的默认值
@@ -128,7 +134,7 @@
                 console.log('已连接到服务器');
                 sourceImageInput.disabled = false; // 启用图片选择
                 connectBtn.textContent = '重新连接';
-                uploadStatus.textContent = '请选择源图片';
+                uploadStatus.textContent = '请选择人脸图片';
             });
             
             socket.on('disconnect', () => {
@@ -144,10 +150,10 @@
             
             socket.on('source_image_status', (data) => {
                 if (data.success) {
-                    uploadStatus.textContent = '源图片上传成功';
+                    uploadStatus.textContent = '人脸图片上传成功';
                     startBtn.disabled = false; // 启用启动按钮
                 } else {
-                    uploadStatus.textContent = '源图片上传失败: ' + data.error;
+                    uploadStatus.textContent = '人脸图片上传失败: ' + data.error;
                     startBtn.disabled = true;
                 }
             });
@@ -315,14 +321,18 @@
             
             // 绘制并缩放图像
             const ctx = tempCanvas.getContext('2d');
-            // 使用双线性插值算法进行缩放，提高图像质量
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
             
             // 转换为JPEG格式并发送，适当降低质量以减小数据量
             const dataURL = tempCanvas.toDataURL('image/jpeg', 0.85);
+
             socket.emit('video_feed', dataURL);
+            // socket.emit('video_feed', {
+            //     frame: dataURL,
+            //     enhance: enableEnhanceCheckbox.checked
+            // });
         }
         
         // 处理源图片上传
