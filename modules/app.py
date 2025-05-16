@@ -108,7 +108,7 @@ def video_feed(data):
     if face_enhancer:
         processors.append('face_enhancer')
     frame_processors = get_frame_processors_modules(processors)
-    
+    print(f'processors {processors}')
     for processor in frame_processors:
         print(f'{processor} running')
         frame = processor.process_frame(source_img, frame)
