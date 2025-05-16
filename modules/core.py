@@ -167,18 +167,24 @@ def limit_resources() -> None:
             tensorflow.config.set_visible_devices([gpus[i] for i in gpu_devices], 'GPU')
             
             # Configure ONNX Runtime GPU settings
-            provider_options = {
+            cuda_provider_options = {
                 'device_id': gpu_devices[0],
                 'arena_extend_strategy': 'kNextPowerOfTwo',
                 'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
                 'cudnn_conv_algo_search': 'EXHAUSTIVE',
                 'do_copy_in_default_stream': True,
             }
+            tensorrt_provider_options = {
+                'device_id': gpu_devices[0],
+                'trt_max_workspace_size': 2 * 1024 * 1024 * 1024,
+                'trt_fp16_enable': True,
+                'trt_engine_cache_enable': True,
+            }
             
             # Set ONNX Runtime provider options globally
             onnxruntime.set_default_logger_severity(3)
             modules.globals.execution_providers = ['TensorrtExecutionProvider','CUDAExecutionProvider']
-            modules.globals.provider_options = [{},provider_options]
+            modules.globals.provider_options = [tensorrt_provider_options,cuda_provider_options]
             
             update_status(f'Using GPU device: {modules.globals.gpu_device}')
     
