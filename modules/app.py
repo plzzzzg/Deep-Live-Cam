@@ -89,14 +89,26 @@ def video_feed(data):
     
     # 解码前端发送的base64图像
     decode_start = time.time()
-    encoded_data = data.split(',')[1]
+    face_enhancer = False
+    # 如果 data 是字符串，直接使用；如果是字典，提取 frame 字段
+    if isinstance(data, dict):
+        frame_data = data['frame']
+        face_enhancer = data.get('enhance', False)
+    else:
+        frame_data = data
+    encoded_data = frame_data.split(',')[1]
     nparr = np.frombuffer(base64.b64decode(encoded_data), np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     decode_time = time.time() - decode_start
     
     # 处理图像
     process_start = time.time()
-    frame_processors = get_frame_processors_modules(modules.globals.frame_processors)
+    # 根据是否启用人脸增强来设置处理器
+    processors = ['face_swapper']
+    if face_enhancer:
+        processors.append('face_enhancer')
+    frame_processors = get_frame_processors_modules(processors)
+    
     for processor in frame_processors:
         print(f'{processor} running')
         frame = processor.process_frame(source_img, frame)
