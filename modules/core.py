@@ -152,8 +152,14 @@ def limit_resources() -> None:
     
     if 'TensorrtExecutionProvider' in modules.globals.execution_providers:
         gpu_devices = [int(device) for device in modules.globals.gpu_device.split(',')]
+        tensorrt_provider_options = {
+            'device_id': gpu_devices[0],
+            'trt_engine_cache_enable': True,
+            'trt_engine_cache_path': './models',
+            'trt_fp16_enable': True,
+        }
         modules.globals.execution_providers = ['TensorrtExecutionProvider']
-        modules.globals.provider_options = [{'device_id': gpu_devices[0]}]
+        modules.globals.provider_options = [tensorrt_provider_options]
     # Set CUDA device
     elif 'CUDAExecutionProvider' in modules.globals.execution_providers:
         gpu_devices = [int(device) for device in modules.globals.gpu_device.split(',')]
