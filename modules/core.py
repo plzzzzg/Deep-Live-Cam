@@ -169,16 +169,16 @@ def limit_resources() -> None:
             # Configure ONNX Runtime GPU settings
             cuda_provider_options = {
                 'device_id': gpu_devices[0],
-                'arena_extend_strategy': 'kNextPowerOfTwo',
-                'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
-                'cudnn_conv_algo_search': 'EXHAUSTIVE',
-                'do_copy_in_default_stream': True,
+                # 'arena_extend_strategy': 'kNextPowerOfTwo',
+                # 'gpu_mem_limit': 2 * 1024 * 1024 * 1024,
+                # 'cudnn_conv_algo_search': 'EXHAUSTIVE',
+                # 'do_copy_in_default_stream': True,
             }
             tensorrt_provider_options = {
                 'device_id': gpu_devices[0],
-                'trt_max_workspace_size': 2 * 1024 * 1024 * 1024,
-                'trt_fp16_enable': True,
-                'trt_engine_cache_enable': True,
+                # 'trt_max_workspace_size': 2 * 1024 * 1024 * 1024,
+                # 'trt_fp16_enable': True,
+                # 'trt_engine_cache_enable': True,
             }
             
             # Set ONNX Runtime provider options globally

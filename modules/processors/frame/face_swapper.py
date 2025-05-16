@@ -56,7 +56,7 @@ def get_face_swapper() -> Any:
             model_path_tensorrt = os.path.join(model_dir, 'inswapper_128_fp16.engine')
             chosen_model_path = None
 
-            if os.path.exists(model_path_tensorrt):
+            if os.path.exists(model_path_tensorrt) and modules.globals.execution_providers[0]=="TensorrtExecutionProvider":
                 chosen_model_path = model_path_tensorrt
                 update_status(f"Loading tensorrt model: {os.path.basename(chosen_model_path)}", NAME)
             # Prioritize FP32 model
