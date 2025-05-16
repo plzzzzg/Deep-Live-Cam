@@ -53,10 +53,14 @@ def get_face_swapper() -> Any:
             model_dir = resolve_relative_path('../models')
             model_path_fp32 = os.path.join(model_dir, 'inswapper_128.onnx')
             model_path_fp16 = os.path.join(model_dir, 'inswapper_128_fp16.onnx')
+            model_path_tensorrt = os.path.join(model_dir, 'inswapper_128_fp16.engine')
             chosen_model_path = None
 
+            if os.path.exists(model_path_tensorrt):
+                chosen_model_path = model_path_tensorrt
+                update_status(f"Loading tensorrt model: {os.path.basename(chosen_model_path)}", NAME)
             # Prioritize FP32 model
-            if os.path.exists(model_path_fp32):
+            elif os.path.exists(model_path_fp32):
                 chosen_model_path = model_path_fp32
                 update_status(f"Loading FP32 model: {os.path.basename(chosen_model_path)}", NAME)
             # Fallback to FP16 model
