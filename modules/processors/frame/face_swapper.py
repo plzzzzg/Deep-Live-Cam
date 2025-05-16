@@ -111,6 +111,7 @@ def process_frame(source_face: Face, temp_frame: Frame) -> Frame:
                 temp_frame = swap_face(source_face, target_face, temp_frame)
     else:
         target_face = get_one_face(temp_frame)
+        update_status(f"Found {len(many_faces)} faces in target frame.", NAME)
         if target_face:
             temp_frame = swap_face(source_face, target_face, temp_frame)
 
